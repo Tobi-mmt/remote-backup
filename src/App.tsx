@@ -1,40 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
-import icon from '../assets/icon.svg';
 import './App.global.css';
+import GoogleDriveCheck from './components/GoogleDriveCheck';
+import VolumeSetup from './components/VolumeSetup';
 
 const Hello = () => {
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const startNextStep = () => {
+    setCurrentStep((prevState) => prevState + 1);
+  };
+
   return (
-    <div>
-      <div className="Hello">
-        <img width="200px" alt="icon" src={icon} />
-      </div>
-      <h1>electron-react-boilerplate</h1>
-      <div className="Hello">
-        <a
-          href="https://electron-react-boilerplate.js.org/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <button type="button">
-            <span role="img" aria-label="books">
-              📚
-            </span>
-            Read our docs
-          </button>
-        </a>
-        <a
-          href="https://github.com/sponsors/electron-react-boilerplate"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <button type="button">
-            <span role="img" aria-label="books">
-              🙏
-            </span>
-            Donate
-          </button>
-        </a>
+    <div className="wrapper">
+      <h1 className="title">Setup a backup in Google Drive</h1>
+      <div className="steps">
+        <GoogleDriveCheck onDone={startNextStep} />
+        {currentStep >= 1 && <VolumeSetup onDone={startNextStep} />}
       </div>
     </div>
   );

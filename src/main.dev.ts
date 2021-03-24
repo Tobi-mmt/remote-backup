@@ -10,8 +10,10 @@
  */
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
+import { execSync } from 'child_process';
 import path from 'path';
-import { app, BrowserWindow, shell } from 'electron';
+import fs from 'fs';
+import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
@@ -69,8 +71,12 @@ const createWindow = async () => {
 
   mainWindow = new BrowserWindow({
     show: false,
-    width: 1024,
-    height: 728,
+    height: 700,
+    minHeight: 550,
+    maxHeight: 550,
+    width: 550,
+    minWidth: 550,
+    maxWidth: 550,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
@@ -129,4 +135,32 @@ app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (mainWindow === null) createWindow();
+});
+
+ipcMain.on('create-virtual-volume', (event, { password }) => {
+  // gets triggered by the async button defined in the App component
+  const filePath =
+    '/Volumes/GoogleDrive/Meine Ablage/RemoteBackup.sparsebundle';
+  if (fs.existsSync(filePath))
+    return event.reply('create-virtual-volume-reply', {
+      isVolumeCreated: false,
+      error: `File ${filePath} already exists`,
+    });
+  try {
+    execSync(
+      `hdiutil create '${filePath}' -size 300m -fs APFS -volname RemoteBackup -type SPARSEBUNDLE -encryption AES-128 -stdinpass -attach -quiet`,
+      { input: password }
+    );
+    event.reply('create-virtual-volume-reply', { isVolumeCreated: true });
+  } catch (error) {
+    event.reply('create-virtual-volume-reply', {
+      isVolumeCreated: false,
+      error: error.toString(),
+    });
+  }
+});
+
+ipcMain.on('google-drive-check', (event) => {
+  const isDriveInstalled = fs.existsSync('/Applications/Google Drive.app');
+  event.reply('google-drive-check-reply', { isDriveInstalled });
 });
