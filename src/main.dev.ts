@@ -16,7 +16,11 @@ import fs from 'fs';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import sudo from 'sudo-prompt';
 import MenuBuilder from './menu';
+
+const backupFilePath =
+  '/Volumes/GoogleDrive/Meine Ablage/RemoteBackup.sparseimage';
 
 export default class AppUpdater {
   constructor() {
@@ -137,30 +141,53 @@ app.on('activate', () => {
   if (mainWindow === null) createWindow();
 });
 
-ipcMain.on('create-virtual-volume', (event, { password }) => {
-  // gets triggered by the async button defined in the App component
-  const filePath =
-    '/Volumes/GoogleDrive/Meine Ablage/RemoteBackup.sparsebundle';
-  if (fs.existsSync(filePath))
-    return event.reply('create-virtual-volume-reply', {
-      isVolumeCreated: false,
-      error: `File ${filePath} already exists`,
-    });
-  try {
-    execSync(
-      `hdiutil create '${filePath}' -size 300m -fs APFS -volname RemoteBackup -type SPARSEBUNDLE -encryption AES-128 -stdinpass -attach -quiet`,
-      { input: password }
-    );
-    event.reply('create-virtual-volume-reply', { isVolumeCreated: true });
-  } catch (error) {
-    event.reply('create-virtual-volume-reply', {
-      isVolumeCreated: false,
-      error: error.toString(),
-    });
-  }
-});
-
 ipcMain.on('google-drive-check', (event) => {
   const isDriveInstalled = fs.existsSync('/Applications/Google Drive.app');
   event.reply('google-drive-check-reply', { isDriveInstalled });
+});
+
+ipcMain.on('check-virtual-volume', (event) => {
+  const doesVolumeExist = fs.existsSync(backupFilePath);
+  return event.reply('check-virtual-volume-reply', { doesVolumeExist });
+});
+
+ipcMain.on('create-virtual-volume', (event, { password }) => {
+  if (fs.existsSync(backupFilePath)) {
+    event.reply('create-virtual-volume-reply', {
+      isVolumeCreated: false,
+      error: `File ${backupFilePath} already exists`,
+    });
+  } else {
+    try {
+      execSync(
+        `hdiutil create '${backupFilePath}' -size 300m -fs APFS -volname RemoteBackup -type SPARSE -encryption AES-128 -stdinpass -attach -quiet`,
+        { input: password }
+      );
+      event.reply('create-virtual-volume-reply', { isVolumeCreated: true });
+    } catch (error) {
+      event.reply('create-virtual-volume-reply', {
+        isVolumeCreated: false,
+        error: error.toString(),
+      });
+    }
+  }
+});
+
+ipcMain.on('set-backup-destination', (event) => {
+  const options = {
+    name: 'Remote Backup',
+    // icns: '/Applications/Electron.app/Contents/Resources/Electron.icns', // (optional)
+  };
+  sudo.exec('tmutil setdestination /Volumes/RemoteBackup', options, (error) => {
+    console.log('tmutil done');
+    if (error) {
+      console.log('tmutil error', error);
+      event.reply('set-backup-destination-reply', {
+        success: false,
+        error: error.toString(),
+      });
+    } else {
+      event.reply('set-backup-destination-reply', { success: true });
+    }
+  });
 });
