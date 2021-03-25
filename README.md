@@ -1,6 +1,9 @@
 # Remote Backup
+<div align="center">
+  <img src=".erb/img/app-screenshot.png"  width=400/>
+</div>
 
-This APP creates a encrypted volume inside the Google Drive, mounts it and uses it as the TimeMachine backup destintation.
+This APP creates an encrypted volume inside the Google Drive, mounts it and uses it as the MacOS TimeMachine backup destintation.
 
 ## Starting Development
 
