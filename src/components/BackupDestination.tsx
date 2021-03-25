@@ -16,8 +16,8 @@ const BackupDestination = ({
     ipcRenderer.send('set-backup-destination');
     ipcRenderer.on(
       'set-backup-destination-reply',
-      (_event, { isDriveInstalled, error: err }) => {
-        if (isDriveInstalled) {
+      (_event, { success, error: err }) => {
+        if (success) {
           setState('done');
           onDone();
         } else {
