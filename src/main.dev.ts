@@ -178,6 +178,7 @@ ipcMain.on('set-backup-destination', (event) => {
     name: 'Remote Backup',
     // icns: '/Applications/Electron.app/Contents/Resources/Electron.icns', // (optional)
   };
+  // TODO: remove the "full disk privilage is needed" error while executing with sudo here
   sudo.exec('tmutil setdestination /Volumes/RemoteBackup', options, (error) => {
     console.log('tmutil done');
     if (error) {
